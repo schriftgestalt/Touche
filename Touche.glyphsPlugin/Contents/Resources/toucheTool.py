@@ -8,7 +8,7 @@ from vanilla import CheckBox, Group, List, ProgressSpinner, Button, TextBox, Flo
 from robofab.world import CurrentFont
 from robofab.interface.all.dialogs import PutFile, Message
 import time
-
+from GlyphsApp import Glyphs
 
 class ToucheTool():
     
@@ -71,9 +71,9 @@ class ToucheTool():
         try:
             index = sender.getSelection()[0]
             glyphs = [self.f[gName] for gName in self.touchingPairs[index]]
-            ActiveFont = self.f._object.font
-            WindowController = self.f._object.windowController()
-            EditViewController = WindowController.activeEditViewController()
+            ActiveFont = Glyphs.font # self.f._object.font
+            WindowController = Glyphs.currentDocument.windowController() # self.f._object.windowController()
+            EditViewController = ActiveFont.currentTab
             if EditViewController is None:
                 from PyObjCTools.AppHelper import callAfter
                 tabText = "/%s/%s" %(glyphs[0].name, glyphs[1].name)
