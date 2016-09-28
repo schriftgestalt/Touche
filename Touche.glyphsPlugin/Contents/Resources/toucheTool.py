@@ -73,7 +73,7 @@ class ToucheTool():
             glyphs = [self.f[gName] for gName in self.touchingPairs[index]]
             ActiveFont = Glyphs.font # self.f._object.font
             WindowController = Glyphs.currentDocument.windowController() # self.f._object.windowController()
-            EditViewController = WindowController.activeEditViewController()
+            EditViewController = ActiveFont.currentTab
             if EditViewController is None:
                 from PyObjCTools.AppHelper import callAfter
                 tabText = "/%s/%s" %(glyphs[0].name, glyphs[1].name)
