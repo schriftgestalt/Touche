@@ -6,7 +6,7 @@ def _run(script):
 	sys.setdefaultencoding('utf8')
 	sys.frozen = 'macosx_plugin'
 	if not __file__ or __file__.find("Contents/Resources/") < 0:
-	base = os.environ['RESOURCEPATH']
+		base = os.environ['RESOURCEPATH']
 		__file__ = path = os.path.join(base, script)
 	else:
 		__file__ = path = __file__.replace("../MacOS/main.py", script)
