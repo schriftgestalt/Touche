@@ -24,9 +24,5 @@
 	<string>Copyright, Nina Stoessigner, 2014</string>
 	<key>NSPrincipalClass</key>
 	<string>TouchePlugin</string>
-	<key>PyMainFileNames</key>
-	<array>
-		<string>../MacOS/main.py</string>
-	</array>
 </dict>
 </plist>
