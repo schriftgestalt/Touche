@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import SegmentsPen
-reload(SegmentsPen)
+#reload(SegmentsPen)
 from fontTools.misc.arrayTools import pointInRect
 
 from fontTools.misc.arrayTools import offsetRect, sectRect

@@ -1,5 +1,5 @@
 # coding=utf-8
-
+from __future__ import print_function
 from Touche import Touche
 from Foundation import NSUserDefaults
 from vanilla import CheckBox, Group, List, ProgressSpinner, Button, TextBox, FloatingWindow
@@ -18,7 +18,7 @@ class ToucheTool():
             self.windowHeight = self.minWindowHeight
         self.closedWindowHeight = 100
         self.w = FloatingWindow((180, self.windowHeight), u'Touché!', minSize=(180,340), maxSize=(250,898))
-        self.w.bind("resize", self.windowResized)
+        self.w.bind("resize", self.windowResized_)
         self.isResizing = False
         p = 10
         w = 160
@@ -27,7 +27,7 @@ class ToucheTool():
         self.w.options = Group((0, 0, 180, 220))
         
         buttons = {
-            "checkSelBtn": {"text": "Check selected glyphs", "callback": self.checkSel, "y": p},
+            "checkSelBtn": {"text": "Check selected glyphs", "callback": self.checkSel_, "y": p},
         }
         for button, data in buttons.iteritems():
             setattr(self.w.options, button, 
@@ -47,25 +47,25 @@ class ToucheTool():
         # list and preview 
         self.w.outputList = List((0,58,-0,-40),
             [{"left glyph": "", "right glyph": ""}], columnDescriptions=[{"title": "left glyph", "width": 90}, {"title": "right glyph"}],
-            showColumnTitles=False, allowsMultipleSelection=False, enableDelete=False, selectionCallback=self.showPair)
+            showColumnTitles=False, allowsMultipleSelection=False, enableDelete=False, selectionCallback=self.showPair_)
         self.w.outputList._setColumnAutoresizing()
         self._resizeWindow(False)
         self.w.open()
     
     
     # callbacks
+    
+    def checkAll_(self, sender=None):
+        self.check_(useSelection=False)
+    
+    def checkSel_(self, sender=None):
+        self.check_(useSelection=True)
         
-    def checkAll(self, sender=None):
-        self.check(useSelection=False)
-        
-    def checkSel(self, sender=None):
-        self.check(useSelection=True)
-        
-    def check(self, useSelection):
+    def check_(self, useSelection):
         self._resizeWindow(enlarge=False)
         self.checkFont(useSelection=useSelection, excludeZeroWidth=self.w.options.zeroCheck.get())
     
-    def showPair(self, sender=None):
+    def showPair_(self, sender=None):
         try:
             index = sender.getSelection()[0]
             glyphs = [self.f[gName] for gName in self.touchingPairs[index]]
@@ -91,7 +91,7 @@ class ToucheTool():
                     if LeftChar < 0xffff and RightChar < 0xffff:
                         NewString = u"%s%s" % (unichr(LeftChar), unichr(RightChar))
                     else:
-                        print "Upper plane codes are not supported yet"
+                        print("Upper plane codes are not supported yet")
                     
                     textStorage.replaceCharactersInRange_withString_(selection, NewString)
                     selection.length = 0
@@ -100,10 +100,9 @@ class ToucheTool():
             #self.w.preview.set(glyphs)
         except IndexError:
             pass
-    
-                
+
     # checking
-        
+    @objc.python_method
     def _hasSufficientWidth(self, g):
         # to ignore combining accents and the like
         if self.excludeZeroWidth:
@@ -111,22 +110,24 @@ class ToucheTool():
             if g.width < 2 or g._object.subCategory == "Nonspacing":
                 return False
         return True
-    
+
+    @objc.python_method
     def _trimGlyphList(self, glyphList):
         newGlyphList = []
         for g in glyphList:
             if g.box is not None and self._hasSufficientWidth(g):
                 newGlyphList.append(g)
         return newGlyphList
-    
-    def windowResized(self, window):
+
+    def windowResized_(self, window):
         posSize = self.w.getPosSize()
         Height = posSize[3]
         if Height > self.closedWindowHeight and self.isResizing is False:
-            print "set new Height", Height
+            print("set new Height", Height)
             NSUserDefaults.standardUserDefaults().setInteger_forKey_(Height, "ToucheWindowHeight")
             self.windowHeight = Height
-    
+
+    @objc.python_method
     def _resizeWindow(self, enlarge=True):
         posSize = self.w.getPosSize()
         if enlarge:
@@ -144,7 +145,7 @@ class ToucheTool():
         self.isResizing = False
     
     # ok let's do this
-
+    @objc.python_method
     def checkFont(self, useSelection=False, excludeZeroWidth=True):
         f = CurrentFont()
         if f is not None:
@@ -153,7 +154,7 @@ class ToucheTool():
             time0 = time.time()
             self.excludeZeroWidth = excludeZeroWidth
             self.f = f
-    
+
             glyphNames = f.selection if useSelection else f.keys()
             glyphList = [f[x] for x in glyphNames]
             glyphList = self._trimGlyphList(glyphList)
@@ -175,7 +176,7 @@ class ToucheTool():
             self._resizeWindow(enlarge=True)
         
             time1 = time.time()
-            print u'Touché: finished checking %d glyphs in %.2f seconds' % (len(glyphList), time1-time0)
+            print(u'Touché: finished checking %d glyphs in %.2f seconds' % (len(glyphList), time1-time0))
             
         else:
             Message(u'Touché: Can’t find a font to check')
