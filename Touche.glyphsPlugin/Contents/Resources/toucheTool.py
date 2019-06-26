@@ -6,7 +6,7 @@ from vanilla import CheckBox, Group, List, ProgressSpinner, Button, TextBox, Flo
 from robofab.world import CurrentFont
 from GlyphsApp import *
 from robofab.interface.all.dialogs import PutFile, Message
-import time
+import time, objc
 
 class ToucheTool():
     
