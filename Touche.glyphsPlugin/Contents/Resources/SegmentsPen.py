@@ -1,4 +1,5 @@
-# coding=utf-8
+# encoding: utf-8
+from __future__ import division, print_function, unicode_literals
 
 from fontTools.pens.basePen import BasePen
 import traceback

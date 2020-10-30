@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import print_function
+from __future__ import division, print_function, unicode_literals
 from Touche import Touche
 from Foundation import NSUserDefaults
 from vanilla import CheckBox, Group, List, ProgressSpinner, Button, TextBox, FloatingWindow
@@ -17,7 +17,7 @@ class ToucheTool():
         if self.windowHeight < self.minWindowHeight:
             self.windowHeight = self.minWindowHeight
         self.closedWindowHeight = 100
-        self.w = FloatingWindow((180, self.windowHeight), u'Touché!', minSize=(180,340), maxSize=(250,898))
+        self.w = FloatingWindow((180, self.windowHeight), 'Touché!', minSize=(180,340), maxSize=(250,898))
         self.w.bind("resize", self.windowResized_)
         self.isResizing = False
         p = 10
@@ -89,7 +89,7 @@ class ToucheTool():
                     
                     NewString = ""
                     if LeftChar < 0xffff and RightChar < 0xffff:
-                        NewString = u"%s%s" % (unichr(LeftChar), unichr(RightChar))
+                        NewString = "%s%s" % (unichr(LeftChar), unichr(RightChar))
                     else:
                         print("Upper plane codes are not supported yet")
                     
@@ -176,7 +176,7 @@ class ToucheTool():
             self._resizeWindow(enlarge=True)
         
             time1 = time.time()
-            print(u'Touché: finished checking %d glyphs in %.2f seconds' % (len(glyphList), time1-time0))
+            print('Touché: finished checking %d glyphs in %.2f seconds' % (len(glyphList), time1-time0))
             
         else:
-            Message(u'Touché: Can’t find a font to check')
+            Message('Touché: Can’t find a font to check')
