@@ -3,10 +3,11 @@ from __future__ import division, print_function, unicode_literals
 from Touche import Touche
 from Foundation import NSUserDefaults
 from vanilla import CheckBox, Group, List, ProgressSpinner, Button, TextBox, FloatingWindow
-from robofab.world import CurrentFont
+#from robofab.world import CurrentFont
 from GlyphsApp import *
-from robofab.interface.all.dialogs import PutFile, Message
 import time, objc
+
+from builtins import chr
 
 class ToucheTool():
     
@@ -29,7 +30,7 @@ class ToucheTool():
         buttons = {
             "checkSelBtn": {"text": "Check selected glyphs", "callback": self.checkSel_, "y": p},
         }
-        for button, data in buttons.iteritems():
+        for button, data in buttons.items():
             setattr(self.w.options, button, 
             Button((p, data["y"], w - 22, 22), data["text"], callback=data["callback"], sizeStyle="small"))
             
@@ -41,7 +42,7 @@ class ToucheTool():
         self.w.results.show(False)
         
         textBoxes = {"stats": -34, "result": -18}
-        for box, y in textBoxes.iteritems():
+        for box, y in textBoxes.items():
             setattr(self.w.results, box, TextBox((p, y, w, 14), "", sizeStyle="small"))
             
         # list and preview 
@@ -69,7 +70,7 @@ class ToucheTool():
         try:
             index = sender.getSelection()[0]
             glyphs = [self.f[gName] for gName in self.touchingPairs[index]]
-            ActiveFont = self.f._font
+            ActiveFont = self.f
             EditViewController = ActiveFont.currentTab
             if EditViewController is None:
                 tabText = "/%s/%s" %(glyphs[0].name, glyphs[1].name)
@@ -78,8 +79,8 @@ class ToucheTool():
                 textStorage = EditViewController.graphicView()
                 if not hasattr(textStorage, "replaceCharactersInRange_withString_"): # compatibility with API change in 2.5
                     textStorage = EditViewController.graphicView().textStorage()
-                LeftChar = ActiveFont.characterForGlyph_(glyphs[0]._object)
-                RightChar = ActiveFont.characterForGlyph_(glyphs[1]._object)
+                LeftChar = ActiveFont.characterForGlyph_(glyphs[0])
+                RightChar = ActiveFont.characterForGlyph_(glyphs[1])
                 if LeftChar != 0 and RightChar != 0:
                     selection = textStorage.selectedRange()
                     if selection.length < 2:
@@ -89,7 +90,7 @@ class ToucheTool():
                     
                     NewString = ""
                     if LeftChar < 0xffff and RightChar < 0xffff:
-                        NewString = "%s%s" % (unichr(LeftChar), unichr(RightChar))
+                        NewString = "%s%s" % (chr(LeftChar), chr(RightChar))
                     else:
                         print("Upper plane codes are not supported yet")
                     
@@ -107,7 +108,7 @@ class ToucheTool():
         # to ignore combining accents and the like
         if self.excludeZeroWidth:
             # also skips 1-unit wide glyphs which many use instead of 0
-            if g.width < 2 or g._object.subCategory == "Nonspacing":
+            if g.width < 2 or g.parent.subCategory == "Nonspacing":
                 return False
         return True
 
@@ -115,7 +116,8 @@ class ToucheTool():
     def _trimGlyphList(self, glyphList):
         newGlyphList = []
         for g in glyphList:
-            if g.box is not None and self._hasSufficientWidth(g):
+            bounds = g.bounds
+            if bounds.size.width > 0 and self._hasSufficientWidth(g):
                 newGlyphList.append(g)
         return newGlyphList
 
@@ -147,19 +149,18 @@ class ToucheTool():
     # ok let's do this
     @objc.python_method
     def checkFont(self, useSelection=False, excludeZeroWidth=True):
-        f = CurrentFont()
+        f = Glyphs.font
         if f is not None:
             # initialize things
             self.w.options.progress.start()
             time0 = time.time()
             self.excludeZeroWidth = excludeZeroWidth
             self.f = f
-
-            glyphNames = f.selection if useSelection else f.keys()
-            glyphList = [f[x] for x in glyphNames]
+            masterID = f.masters[f.masterIndex].id
+            glyphs = f.selection if useSelection else f.keys()
+            glyphList = [g.layers[masterID] for g in glyphs]
             glyphList = self._trimGlyphList(glyphList)
-            
-            self.touchingPairs = Touche(f).findTouchingPairs(glyphList)
+            self.touchingPairs = Touche(f, masterID).findTouchingPairs(glyphList)
         
             # display output
             self.w.results.stats.set("%d glyphs checked" % len(glyphList))

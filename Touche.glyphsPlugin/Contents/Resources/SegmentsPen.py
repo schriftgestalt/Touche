@@ -6,9 +6,10 @@ import traceback
 
 class SegmentsPen(BasePen):
     
-    def __init__(self, glyphSet):
+    def __init__(self, glyphSet, masterID):
         BasePen.__init__(self, glyphSet)
         self.segments = []
+        self._masterID = masterID
     
     def addSegment(self, segment):
         self.segments.append(segment)
@@ -36,8 +37,9 @@ class SegmentsPen(BasePen):
         from fontTools.pens.transformPen import TransformPen
         try:
             glyph = self.glyphSet[glyphName]
+            layer = glyph.layers[self._masterID]
         except KeyError:
             pass
         else:
             tPen = TransformPen(self, transformation)
-            glyph.draw(tPen)# coding=utf-8
+            layer.draw(tPen)# coding=utf-8

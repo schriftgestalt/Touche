@@ -2,11 +2,10 @@
 from __future__ import division, print_function, unicode_literals
 
 import SegmentsPen
-#reload(SegmentsPen)
-from fontTools.misc.arrayTools import pointInRect
 
-from fontTools.misc.arrayTools import offsetRect, sectRect
-from Foundation import NSBundle
+from GlyphsApp import *
+
+from Foundation import NSBundle, NSOffsetRect, NSIntersectsRect, NSPointInRect, NSMinX, NSMinY, NSMaxX, NSMaxY
 import objc
 _path = NSBundle.mainBundle().bundlePath()
 _path = _path+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/BridgeSupport/GlyphsCore.bridgesupport"
@@ -15,9 +14,12 @@ objc.parseBridgeSupport(f.read(), globals(), _path)
 f.close()
 
 def segmentInBound(segment, bounds):
-    minX, minY, maxX, maxY = bounds
+    minX = NSMinX(bounds)
+    minY = NSMinY(bounds)
+    maxX = NSMaxX(bounds)
+    maxX = NSMaxY(bounds)
     for point in segment:
-        if pointInRect(point, bounds):
+        if NSPointInRect(point, bounds):
             return True
         found = minX <= point[0] <= maxX
         if found:
@@ -36,9 +38,10 @@ class Touche(object):
     Public methods: checkPair, findTouchingPairs
     """
 
-    def __init__(self, font):
+    def __init__(self, font, masterID):
         self.font = font
         self.penCache = {}
+        self._masterID = masterID
         #self.flatKerning = font.naked().flatKerning
 
     def findTouchingPairs(self, glyphs):
@@ -50,11 +53,11 @@ class Touche(object):
         # lookup all sidebearings
         lsb, rsb = ({} for i in range(2))
         for g in glyphs:
-            lsb[g], rsb[g] = g.leftMargin, g.rightMargin
+            lsb[g], rsb[g] = g.LSB, g.RSB
         self.lsb, self.rsb = lsb, rsb
         
         pairs = [(g1, g2) for g1 in glyphs for g2 in glyphs]
-        return [(g1.name, g2.name) for (g1, g2) in pairs if self.checkPair(g1, g2)]
+        return [(g1.parent.name, g2.parent.name) for (g1, g2) in pairs if self.checkPair(g1, g2)]
 
     # def getKerning(self, g1, g2):
     #     return self.flatKerning.get((g1.name, g2.name), 0)
@@ -64,7 +67,10 @@ class Touche(object):
 
         Returns a Boolean if overlapping.
         """
-        kern = g1._layer.rightKerningForLayer_(g2._layer)
+        if Glyphs.versionNumber >= 3:
+            kern = g1.nextKerningForLayer_direction_(g2, LTR)
+        else:
+            kern = g1.rightKerningForLayer_(g2)
         if kern > 10000:
             kern = 0
         # Check sidebearings first (PvB's idea)
@@ -72,23 +78,19 @@ class Touche(object):
             return False
 
         # get the bounds and check them
-        bounds1 = g1.box
-        if bounds1 is None:
-            return False
-        bounds2 = g2.box
-        if bounds2 is None:
-            return False
+        bounds1 = g1.bounds
+        bounds2 = g2.bounds 
 
-        bounds2 = offsetRect(bounds2, g1.width+kern, 0)
+        bounds2 = NSOffsetRect(bounds2, g1.width + kern, 0)
         # check for intersection bounds
-        intersectingBounds, _ = sectRect(bounds1, bounds2)
+        intersectingBounds = NSIntersectsRect(bounds1, bounds2)
         if not intersectingBounds:
             return False
 
         # create a pen for g1 with a shifted rect, draw the glyph into the pen
         pen1 = self.penCache.get(g1.name, None)
         if not pen1:
-            pen1 = SegmentsPen.SegmentsPen(self.font)
+            pen1 = SegmentsPen.SegmentsPen(self.font, self._masterID)
             g1.draw(pen1)
             self.penCache[g1.name] = pen1
         
@@ -96,14 +98,14 @@ class Touche(object):
         
         pen2 = self.penCache.get(g2.name, None)
         if not pen2:
-            pen2 = SegmentsPen.SegmentsPen(self.font)
+            pen2 = SegmentsPen.SegmentsPen(self.font, self._masterID)
             g2.draw(pen2)
             self.penCache[g2.name] = pen2
         
         offset = g1.width+kern
         
         for segment1 in pen1.segments:
-            if not segmentInBound(segment1, bounds2):
+            if not NSIntersectsRect(segment1, bounds2):
                 continue
             
             for segment2 in pen2.segments:

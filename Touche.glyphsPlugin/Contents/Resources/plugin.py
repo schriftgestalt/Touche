@@ -8,20 +8,13 @@ from toucheTool import ToucheTool
 
 class TouchePlugin (GeneralPlugin):
 	def settings(self):
-		self.name = u"Touché"
+		self.name = "Touché"
 	
 	def start(self):
-		try: 
-			newMenuItem = NSMenuItem(self.name, self.showWindow)
-			Glyphs.menu[EDIT_MENU].append(newMenuItem)
-		except:
-			mainMenu = Glyphs.mainMenu()
-			s = objc.selector(self.showWindow, signature='v@:@')
-			newMenuItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(self.name, s, "")
-			newMenuItem.setTarget_(self)
-			mainMenu.itemWithTag_(5).submenu().addItem_(newMenuItem)
+		newMenuItem = NSMenuItem(self.name, self.showWindow_)
+		Glyphs.menu[EDIT_MENU].append(newMenuItem)
 	
-	def showWindow(self, sender):
+	def showWindow_(self, sender):
 		self.touche = ToucheTool()
 	
 	def __file__(self):
