@@ -17,6 +17,8 @@ class TouchePlugin (GeneralPlugin):
 	@objc.python_method
 	def start(self):
 		newMenuItem = NSMenuItem(self.name, self.showWindow_)
+		if not newMenuItem.target(): 
+			newMenuItem.setTarget_(self)
 		Glyphs.menu[EDIT_MENU].append(newMenuItem)
 
 	def showWindow_(self, sender):
