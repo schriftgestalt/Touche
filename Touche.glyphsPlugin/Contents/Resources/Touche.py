@@ -3,21 +3,24 @@ from __future__ import division, print_function, unicode_literals
 
 import SegmentsPen
 
-from GlyphsApp import *
-
-from Foundation import NSBundle, NSOffsetRect, NSIntersectsRect, NSPointInRect, NSMinX, NSMinY, NSMaxX, NSMaxY
+from GlyphsApp import Glyphs, LTR, GSFont
+from Foundation import NSBundle, NSOffsetRect, NSIntersectsRect, NSPointInRect, NSMinX, NSMaxX
 import objc
-_path = NSBundle.mainBundle().bundlePath()
-_path = _path+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/BridgeSupport/GlyphsCore.bridgesupport"
+
+
+_path = NSBundle.bundleForClass_(GSFont).bundlePath()
+_path = _path + "/Versions/A/Resources/BridgeSupport/GlyphsCore.bridgesupport"
+print ("__path", _path)
 f = open(_path)
 objc.parseBridgeSupport(f.read(), globals(), _path)
 f.close()
 
+
 def segmentInBound(segment, bounds):
     minX = NSMinX(bounds)
-    minY = NSMinY(bounds)
+    # minY = NSMinY(bounds)
     maxX = NSMaxX(bounds)
-    maxX = NSMaxY(bounds)
+    # maxY = NSMaxY(bounds)
     for point in segment:
         if NSPointInRect(point, bounds):
             return True
@@ -25,16 +28,17 @@ def segmentInBound(segment, bounds):
         if found:
             return True
     return False
-    
+
+
 class Touche(object):
     """Checks a font for touching glyphs.
-    
+
         font = CurrentFont()
         a, b = font['a'], font['b']
         touche = Touche(font)
         touche.checkPair(a, b)
         touche.findTouchingPairs([a, b])
-    
+
     Public methods: checkPair, findTouchingPairs
     """
 
@@ -42,20 +46,20 @@ class Touche(object):
         self.font = font
         self.penCache = {}
         self._masterID = masterID
-        #self.flatKerning = font.naked().flatKerning
+        # self.flatKerning = font.naked().flatKerning
 
     def findTouchingPairs(self, glyphs):
         """Finds all touching pairs in a list of glyphs.
 
         Returns a list of tuples containing the names of overlapping glyphs
         """
-        
+
         # lookup all sidebearings
         lsb, rsb = ({} for i in range(2))
         for g in glyphs:
             lsb[g], rsb[g] = g.LSB, g.RSB
         self.lsb, self.rsb = lsb, rsb
-        
+
         pairs = [(g1, g2) for g1 in glyphs for g2 in glyphs]
         return [(g1.parent.name, g2.parent.name) for (g1, g2) in pairs if self.checkPair(g1, g2)]
 
@@ -79,7 +83,7 @@ class Touche(object):
 
         # get the bounds and check them
         bounds1 = g1.bounds
-        bounds2 = g2.bounds 
+        bounds2 = g2.bounds
 
         bounds2 = NSOffsetRect(bounds2, g1.width + kern, 0)
         # check for intersection bounds
@@ -93,21 +97,21 @@ class Touche(object):
             pen1 = SegmentsPen.SegmentsPen(self.font, self._masterID)
             g1.draw(pen1)
             self.penCache[g1.name] = pen1
-        
+
         # create a pen for g2 with a shifted rect and move each found segment with the width and kerning
-        
+
         pen2 = self.penCache.get(g2.name, None)
         if not pen2:
             pen2 = SegmentsPen.SegmentsPen(self.font, self._masterID)
             g2.draw(pen2)
             self.penCache[g2.name] = pen2
-        
-        offset = g1.width+kern
-        
+
+        offset = g1.width + kern
+
         for segment1 in pen1.segments:
             if not NSIntersectsRect(segment1, bounds2):
                 continue
-            
+
             for segment2 in pen2.segments:
                 segment2 = [(p[0] + offset, p[1]) for p in segment2]
                 if not segmentInBound(segment2, bounds1):
