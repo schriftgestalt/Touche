@@ -10,7 +10,7 @@ import objc
 
 _path = NSBundle.bundleForClass_(GSFont).bundlePath()
 _path = _path + "/Versions/A/Resources/BridgeSupport/GlyphsCore.bridgesupport"
-print ("__path", _path)
+# print("__path", _path)
 f = open(_path)
 objc.parseBridgeSupport(f.read(), globals(), _path)
 f.close()
