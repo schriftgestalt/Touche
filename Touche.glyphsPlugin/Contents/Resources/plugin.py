@@ -2,8 +2,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import objc
-from Cocoa import NSMenuItem
-from GlyphsApp import Glyphs, EDIT_MENU
+from GlyphsApp import Glyphs, EDIT_MENU, NSMenuItem
 from GlyphsApp.plugins import GeneralPlugin
 from toucheTool import ToucheTool
 
@@ -16,9 +15,13 @@ class TouchePlugin (GeneralPlugin):
 
 	@objc.python_method
 	def start(self):
-		newMenuItem = NSMenuItem(self.name, self.showWindow_)
-		if not newMenuItem.target():
+		if Glyphs.buildNumber >= 3320:
+			from GlyphsApp.UI import MenuItem
+			newMenuItem = MenuItem(self.name, action=self.showWindow_, target=self)
+		else:
+			newMenuItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(self.name, self.showWindow_, "")
 			newMenuItem.setTarget_(self)
+
 		Glyphs.menu[EDIT_MENU].append(newMenuItem)
 
 	def showWindow_(self, sender):
